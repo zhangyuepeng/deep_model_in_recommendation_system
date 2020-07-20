@@ -6,7 +6,7 @@ Xiangnan He, Lizi Liao, Hanwang Zhang, Liqiang Nie, Xia Hu and Tat-Seng Chua (20
 
 Three collaborative filtering models: Generalized Matrix Factorization (GMF), Multi-Layer Perceptron (MLP), and Neural Matrix Factorization (NeuMF). To target the models for implicit feedback and ranking task, we optimize them using log loss with negative sampling. 
 
-**Please cite our WWW'17 paper if you use the codes. Thanks!** 
+**Please cite the WWW'17 paper if you use the codes. Thanks!** 
 
 
 ## Example to run the codes.
