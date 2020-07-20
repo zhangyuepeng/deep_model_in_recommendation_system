@@ -4,7 +4,7 @@ implement deep model by native tensorflow api
 
 you can change to the model folder and directly run the start script
 
-It is compatible with **tensorflow 2.0+
+It is compatible with **tensorflow 2.0+**
 
 ## Models List and Folder
 
