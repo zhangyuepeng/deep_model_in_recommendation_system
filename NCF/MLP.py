@@ -7,10 +7,9 @@ from tensorflow.keras.optimizers import Adagrad, RMSprop, SGD, Adam
 
 from Dataset import Dataset
 from tensorflow.keras import Model, initializers
-from tensorflow.keras.layers import Embedding, Input, Dense, Reshape, Flatten, Dropout, Concatenate
+from tensorflow.keras.layers import Embedding, Dense, Flatten, Concatenate
 from tensorflow.keras.regularizers import l2
 from evaluate import evaluate_model
-import tensorflow as tf
 
 
 def get_train_instances(train, num_negatives):
@@ -78,7 +77,7 @@ class NCFModel(Model):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run MLP.")
-    parser.add_argument('--path', nargs='?', default='Data/',
+    parser.add_argument('--path', nargs='?', default='data/',
                         help='Input data path.')
     parser.add_argument('--dataset', nargs='?', default='ml-1m',
                         help='Choose a dataset.')
@@ -106,28 +105,28 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    # path = args.path
-    # dataset = args.dataset
-    # layers = eval(args.layers)
-    # reg_layers = eval(args.reg_layers)
-    # num_negatives = args.num_neg
-    # learner = args.learner
-    # learning_rate = args.lr
-    # batch_size = args.batch_size
-    # epochs = args.epochs
-    # verbose = args.verbose
+    path = args.path
+    dataset = args.dataset
+    layers = eval(args.layers)
+    reg_layers = eval(args.reg_layers)
+    num_negatives = args.num_neg
+    learner = args.learner
+    learning_rate = args.lr
+    batch_size = args.batch_size
+    epochs = args.epochs
+    verbose = args.verbose
 
-    path = "./data/"
-    dataset = "ml-1m"
-    layers = [64, 32, 16, 8]
-    reg_layers = [0, 0, 0, 0]
-    num_negatives = 4
-    learner = "adam"
-    learning_rate = 0.01
-    batch_size = 256
-    epochs = 20
-    verbose = 1
-    args.out = 0
+    # path = "./data/"
+    # dataset = "ml-1m"
+    # layers = [64, 32, 16, 8]
+    # reg_layers = [0, 0, 0, 0]
+    # num_negatives = 4
+    # learner = "adam"
+    # learning_rate = 0.01
+    # batch_size = 256
+    # epochs = 20
+    # verbose = 1
+    # args.out = 0
 
 
 
@@ -154,25 +153,6 @@ if __name__ == '__main__':
     else:
         ncf_model.compile(optimizer=SGD(lr=learning_rate), loss='binary_crossentropy', metrics=['accuracy'])
 
-    # ncf_model = NCFModel(1000, 1000, [64, 32, 16, 8], [0, 0, 0, 0])
-    # a = [np.array([[1], [2], [3]]), np.array([[4], [5], [6]])]
-    # a = [np.array([1, 2, 3]), np.array([4, 5, 6])]
-    # print(ncf_model(a))
-    # print(ncf_model.summary())
-    #
-    # ncf_model.compile(optimizer='adam',
-    #                   loss='binary_crossentropy',
-    #                   metrics=['accuracy'])
-    # ncf_model.fit(a, np.array([[0], [1], [0]]))
-
-
-    # e = Embedding(input_dim=3, output_dim=16, name='user_embedding',
-    #               embeddings_initializer=initializers.RandomNormal(mean=0.0, stddev=0.01),
-    #               input_length=2)
-    # print(e(np.array([[2], [1]])))
-    # print(Flatten()(e(np.array([2, 1]))))
-
-        # Check Init performance
     t1 = time()
     (hits, ndcgs) = evaluate_model(ncf_model, testRatings, testNegatives, topK, evaluation_threads)
     print(ncf_model.summary())
