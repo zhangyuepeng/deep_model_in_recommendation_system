@@ -1,4 +1,4 @@
-# deepmodel_from_scratch
+# deep_model_from_scratch
 
 implement deep model by native tensorflow api
 
