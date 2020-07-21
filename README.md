@@ -13,4 +13,3 @@ It is compatible with **tensorflow 2.0+**
 | NCF  | [WWW 2017][Neural Collaborative Filtering](https://arxiv.org/abs/1708.05031)       |    NCF     |
 
 
-
