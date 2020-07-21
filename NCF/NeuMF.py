@@ -7,9 +7,10 @@ from tensorflow.keras.optimizers import Adagrad, RMSprop, SGD, Adam
 
 from Dataset import Dataset
 from tensorflow.keras import Model, initializers
-from tensorflow.keras.layers import Embedding, Dense, Flatten, Concatenate
+from tensorflow.keras.layers import Embedding, Dense, Flatten, Concatenate, Multiply
 from tensorflow.keras.regularizers import l2
 from evaluate import evaluate_model
+from tensorflow import keras
 
 
 def get_train_instances(train, num_negatives):
@@ -33,12 +34,8 @@ def get_train_instances(train, num_negatives):
 
 class NCFModel(Model):
 
-    def __init__(self, num_users, num_items, layers_unit, reg_layers):
+    def __init__(self, num_users, num_items, mf_dim=10, layers=[10], reg_layers=[0], reg_mf=0):
         super(NCFModel, self).__init__()
-        self.num_users = num_users
-        self.num_items = num_items
-        self.layers_unit = layers
-        self.reg_layers = reg_layers
         self.MLP_Embedding_User = Embedding(input_dim=num_users, output_dim=layers[0]//2, name='user_embedding',
                                             embeddings_initializer=initializers.RandomNormal(mean=0.0, stddev=0.01),
                                             embeddings_regularizer=l2(reg_layers[0]),
@@ -47,36 +44,52 @@ class NCFModel(Model):
                                             embeddings_initializer=initializers.RandomNormal(mean=0.0, stddev=0.01),
                                             embeddings_regularizer=l2(reg_layers[0]),
                                             input_length=1)
+        self.MF_Embedding_User = Embedding(input_dim=num_users, output_dim=mf_dim, name='user_embedding',
+                                           embeddings_initializer=initializers.RandomNormal(mean=0.0, stddev=0.01),
+                                           embeddings_regularizer=l2(reg_mf),
+                                           input_length=1)
+        self.MF_Embedding_Item = Embedding(input_dim=num_items, output_dim=mf_dim, name='item_embedding',
+                                           embeddings_initializer=initializers.RandomNormal(mean=0.0, stddev=0.01),
+                                           embeddings_regularizer=l2(reg_mf),
+                                           input_length=1)
         self.flatten = Flatten()
         self.concat = Concatenate(axis=1)
+        self.multiply = Multiply()
         self.dense_layers = []
-        for idx in range(1, len(layers_unit)):
+        for idx in range(1, len(layers)):
             self.dense_layers.append(Dense(layers[idx], kernel_regularizer=l2(reg_layers[idx]), activation='relu',
                                            name='layer%d' % idx))
 
         self.prediction = Dense(1, activation='sigmoid', kernel_initializer=initializers.lecun_uniform, name='prediction')
 
     def call(self, inputs):
-        user_embedding = self.MLP_Embedding_User(inputs[0])
-        item_embedding = self.MLP_Embedding_Item(inputs[1])
-        print(user_embedding.shape)
-        print(item_embedding.shape)
-        user_embedding = self.flatten(user_embedding)
-        item_embedding = self.flatten(item_embedding)
-        all_embedding = self.concat([user_embedding, item_embedding])
-        print(user_embedding.shape)
-        print(item_embedding.shape)
-        print(all_embedding.shape)
+        mlp_user_embedding = self.flatten(self.MLP_Embedding_User(inputs[0]))
+        mlp_item_embedding = self.flatten(self.MLP_Embedding_Item(inputs[1]))
+        mf_user_embedding = self.flatten(self.MF_Embedding_User(inputs[0]))
+        mf_item_embedding = self.flatten(self.MF_Embedding_Item(inputs[1]))
+        print(mlp_user_embedding.shape)
+        print(mlp_item_embedding.shape)
+        print(mf_user_embedding.shape)
+        print(mf_item_embedding.shape)
+        print("--------")
+        mlp_vector = self.concat([mlp_user_embedding, mlp_item_embedding])
+        mf_vector = self.multiply([mf_user_embedding, mf_item_embedding])
+        print(mlp_vector.shape)
+        print(mf_vector.shape)
+        print("--------")
         for dense_layer in self.dense_layers:
-            all_embedding = dense_layer(all_embedding)
-            print(all_embedding.shape)
-        score = self.prediction(all_embedding)
+            mlp_vector = dense_layer(mlp_vector)
+            print(mlp_vector.shape)
+        print("--------")
+        predict_vector = self.concat([mlp_vector, mf_vector])
+        score = self.prediction(predict_vector)
+        print(predict_vector.shape)
         print(score.shape)
         return score
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Run MLP.")
+    parser = argparse.ArgumentParser(description="Run NeuMF.")
     parser.add_argument('--path', nargs='?', default='data/',
                         help='Input data path.')
     parser.add_argument('--dataset', nargs='?', default='ml-1m',
@@ -85,11 +98,14 @@ def parse_args():
                         help='Number of epochs.')
     parser.add_argument('--batch_size', type=int, default=256,
                         help='Batch size.')
+    parser.add_argument('--num_factors', type=int, default=8,
+                        help='Embedding size of MF model.')
     parser.add_argument('--layers', nargs='?', default='[64,32,16,8]',
-                        help="Size of each layer. Note that the first layer is the concatenation of"
-                             " user and item embeddings. So layers[0]/2 is the embedding size.")
+                        help="MLP layers. Note that the first layer is the concatenation of user and item embeddings. So layers[0]/2 is the embedding size.")
+    parser.add_argument('--reg_mf', type=float, default=0,
+                        help='Regularization for MF embeddings.')
     parser.add_argument('--reg_layers', nargs='?', default='[0,0,0,0]',
-                        help="Regularization for each layer")
+                        help="Regularization for each MLP layer. reg_layers[0] is the regularization for embeddings.")
     parser.add_argument('--num_neg', type=int, default=4,
                         help='Number of negative instances to pair with a positive instance.')
     parser.add_argument('--lr', type=float, default=0.001,
@@ -100,6 +116,10 @@ def parse_args():
                         help='Show performance per X iterations')
     parser.add_argument('--out', type=int, default=1,
                         help='Whether to save the trained model.')
+    parser.add_argument('--mf_pretrain', nargs='?', default='',
+                        help='Specify the pretrain model file for MF part. If empty, no pretrain will be used')
+    parser.add_argument('--mlp_pretrain', nargs='?', default='',
+                        help='Specify the pretrain model file for MLP part. If empty, no pretrain will be used')
     return parser.parse_args()
 
 
@@ -107,6 +127,8 @@ if __name__ == '__main__':
     args = parse_args()
     path = args.path
     dataset = args.dataset
+    mf_dim = args.num_factors
+    reg_mf = args.reg_mf
     layers = eval(args.layers)
     reg_layers = eval(args.reg_layers)
     num_negatives = args.num_neg
@@ -143,7 +165,7 @@ if __name__ == '__main__':
     print("Load data done [%.1f s]. #user=%d, #item=%d, #train=%d, #test=%d"
           % (time() - t1, num_users, num_items, train.nnz, len(testRatings)))
 
-    ncf_model = NCFModel(num_users, num_items, layers, reg_layers)
+    ncf_model = NCFModel(num_users, num_items, mf_dim, layers, reg_layers, reg_mf)
     if learner.lower() == "adagrad":
         ncf_model.compile(optimizer=Adagrad(lr=learning_rate), loss='binary_crossentropy', metrics=['accuracy'])
     elif learner.lower() == "rmsprop":
@@ -156,6 +178,7 @@ if __name__ == '__main__':
     t1 = time()
     (hits, ndcgs) = evaluate_model(ncf_model, testRatings, testNegatives, topK, evaluation_threads)
     print(ncf_model.summary())
+    # keras.utils.plot_model(ncf_model, "ncf_model.png", show_shapes=True)
     hr, ndcg = np.array(hits).mean(), np.array(ndcgs).mean()
     print('Init: HR = %.4f, NDCG = %.4f [%.1f]' % (hr, ndcg, time() - t1))
 
