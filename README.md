@@ -1,4 +1,4 @@
-# deep_model_from_scratch
+# deep_model_in_recommendation_system
 
 implement deep model by native tensorflow api
 
