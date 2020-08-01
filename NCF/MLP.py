@@ -77,7 +77,7 @@ class NCFModel(Model):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run MLP.")
-    parser.add_argument('--path', nargs='?', default='data/',
+    parser.add_argument('--path', nargs='?', default='../data/',
                         help='Input data path.')
     parser.add_argument('--dataset', nargs='?', default='ml-1m',
                         help='Choose a dataset.')
