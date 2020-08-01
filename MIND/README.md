@@ -27,5 +27,5 @@ test.negative
 <br/>
 <br/>
 
-- **refer to [https://github.com/hexiangnan/neural_collaborative_filtering](https://github.com/hexiangnan/neural_collaborative_filtering)**
-- **refer to [https://github.com/shenweichen/DeepMatch](https://github.com/shenweichen/DeepMatch)**
+**refer to [https://github.com/hexiangnan/neural_collaborative_filtering](https://github.com/hexiangnan/neural_collaborative_filtering)**
+**refer to [https://github.com/shenweichen/DeepMatch](https://github.com/shenweichen/DeepMatch)**
